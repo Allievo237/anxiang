@@ -3,6 +3,7 @@
 
 /** @typedef {{id:string,name:string,x:number,z:number}} BuildingData */
 /** @typedef {{id:string,building:string,floor:number,unit:string,room:string,type:string,level:number,time:string,device:string,status:string,description:string}} AlertData */
+/** @typedef {{distance:number,object:{userData:{id:string}}}} MarkerRaycastHit */
 
 /** @type {BuildingData[]} */
 const buildings = [
@@ -46,9 +47,9 @@ const materials = {
   path:new THREE.MeshStandardMaterial({color:0xede9df,roughness:1}),
   selected:new THREE.MeshStandardMaterial({color:0x8bc5a9,transparent:true,opacity:.26,depthWrite:false,side:THREE.DoubleSide}),
   floor:new THREE.MeshStandardMaterial({color:0x82bd97,transparent:true,opacity:.45,depthWrite:false,side:THREE.DoubleSide}),
-  urgent:new THREE.MeshBasicMaterial({color:0xd85651,depthTest:false}),
-  high:new THREE.MeshBasicMaterial({color:0xe68b57,depthTest:false}),
-  watch:new THREE.MeshBasicMaterial({color:0xd7af54,depthTest:false})
+  urgent:new THREE.MeshBasicMaterial({color:0xd85651}),
+  high:new THREE.MeshBasicMaterial({color:0xe68b57}),
+  watch:new THREE.MeshBasicMaterial({color:0xd7af54})
 };
 const FLOOR_HEIGHT=.275;
 const TOWER_HEIGHT=35*FLOOR_HEIGHT;
@@ -74,6 +75,7 @@ const desiredTarget=new THREE.Vector3(0,4.4,0);
 let desiredRadius=31;
 /** @type {{started:number,duration:number,fromTarget:any,fromRadius:number,fromTheta:number,toTheta:number,fromPhi:number,fromRotation:number,toRotation:number}|null} */
 let returnTransition=null;
+let layoutChanging=false;
 const raycaster=new THREE.Raycaster();
 const pointer=new THREE.Vector2();
 
@@ -113,7 +115,7 @@ for(const z of [-1.1,1.2])neighborhood.add(box(17,.015,.66,materials.path,0,-.03
 for(const x of [-2.9,2.4])neighborhood.add(box(.63,.015,13,materials.path,x,-.02,0));
 
 /** @param {AlertData} alert @returns {void} */
-function createMarker(alert){const tower=towerObjects.get(alert.building);const material=alert.level===3?materials.urgent:alert.level===2?materials.high:materials.watch;const y=(alert.floor-.5)*FLOOR_HEIGHT;const x=alert.room.endsWith("01")?-.62:.62;const group=new THREE.Group();group.position.set(x,y,1.07);tower.group.add(group);const halo=new THREE.Mesh(new THREE.SphereGeometry(.19,16,12),new THREE.MeshBasicMaterial({color:material.color,transparent:true,opacity:.19,depthTest:false}));halo.renderOrder=20;group.add(halo);const dot=new THREE.Mesh(new THREE.SphereGeometry(.095,16,12),material);dot.renderOrder=21;group.add(dot);const hit=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12),new THREE.MeshBasicMaterial({visible:false}));hit.userData={kind:"alert",id:alert.id};group.add(hit);markerHits.push(hit);markerObjects.set(alert.id,{group,halo,dot,hit});}
+function createMarker(alert){const tower=towerObjects.get(alert.building);const material=alert.level===3?materials.urgent:alert.level===2?materials.high:materials.watch;const y=(alert.floor-.5)*FLOOR_HEIGHT;const x=alert.room.endsWith("01")?-.62:.62;const group=new THREE.Group();group.position.set(x,y,1.07);tower.group.add(group);const halo=new THREE.Mesh(new THREE.SphereGeometry(.19,16,12),new THREE.MeshBasicMaterial({color:material.color,transparent:true,opacity:.19,depthWrite:false}));halo.renderOrder=20;group.add(halo);const dot=new THREE.Mesh(new THREE.SphereGeometry(.095,16,12),material);dot.renderOrder=21;group.add(dot);const hit=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12),new THREE.MeshBasicMaterial({visible:false}));hit.userData={kind:"alert",id:alert.id};group.add(hit);markerHits.push(hit);markerObjects.set(alert.id,{group,halo,dot,hit});}
 for(const alert of alerts)createMarker(alert);
 
 /** @param {number} level @returns {string} */
@@ -135,11 +137,11 @@ function renderFloors(){const grid=/** @type {HTMLElement} */(document.getElemen
 /** @param {string} id @param {number} floor @returns {void} */
 function selectFloor(id,floor){if(selectedBuilding!==id)selectBuilding(id);selectedFloor=floor;const tower=towerObjects.get(id);tower.floorHighlight.visible=true;tower.floorHighlight.position.y=(floor-.5)*FLOOR_HEIGHT;const focus=new THREE.Vector3(0,(floor-.5)*FLOOR_HEIGHT,0);tower.group.localToWorld(focus);desiredTarget.copy(focus);desiredRadius=11;renderFloors();/** @type {HTMLElement} */(document.getElementById("sceneHint")).textContent=`${getBuilding(id).name} · ${floor}层${alerts.some(alert=>alert.building===id&&alert.floor===floor)?" · 此层有告警":""}`;}
 /** @param {string} id @returns {void} */
-function openAlert(id){const alert=getAlert(id);selectFloor(alert.building,alert.floor);selectedAlert=id;desiredRadius=12;const marker=markerObjects.get(id);marker.group.getWorldPosition(desiredTarget);workspace.classList.add("detail-open");/** @type {HTMLElement} */(document.getElementById("listView")).hidden=true;const detail=/** @type {HTMLElement} */(document.getElementById("detailView"));detail.hidden=false;detail.innerHTML=`<div class="detail-content"><button class="detail-back" id="backButton" type="button">← 返回列表</button><span class="panel-kicker">ALERT DETAIL / ${alert.id}</span><h2 class="detail-title">${alert.type}</h2><p class="detail-sub">告警点已在左侧模型中定位</p><div class="detail-hero"><span class="level ${levelClass(alert.level)}">${levelName(alert.level)}告警</span><p>${alert.description}</p></div><div class="detail-grid"><div><span>住户位置</span><b>${getBuilding(alert.building).name}<br>${alert.unit} ${alert.floor}层 ${alert.room}室</b></div><div><span>发生时间</span><b>${alert.time}</b></div><div><span>告警等级</span><b>${levelName(alert.level)}</b></div><div><span>处理状态</span><b id="detailStatus">${alert.status}</b></div></div><div class="detail-section"><h3>设备依据</h3><div class="evidence">${alert.device}</div></div><div class="actions"><button id="contactButton" type="button">记录联系住户</button><button id="dispatchButton" class="primary" type="button">安排上门处置</button></div></div>`;/** @type {HTMLElement} */(document.getElementById("backButton")).addEventListener("click",closeDetail);/** @type {HTMLElement} */(document.getElementById("contactButton")).addEventListener("click",()=>updateStatus(alert,"已联系住户"));/** @type {HTMLElement} */(document.getElementById("dispatchButton")).addEventListener("click",()=>updateStatus(alert,"已安排上门"));requestAnimationFrame(resize);}
+function openAlert(id){const alert=getAlert(id);selectFloor(alert.building,alert.floor);selectedAlert=id;desiredRadius=12;const marker=markerObjects.get(id);marker.group.getWorldPosition(desiredTarget);layoutChanging=!workspace.classList.contains("detail-open")&&window.matchMedia("(min-width: 1051px)").matches;workspace.classList.add("detail-open");/** @type {HTMLElement} */(document.getElementById("listView")).hidden=true;const detail=/** @type {HTMLElement} */(document.getElementById("detailView"));detail.hidden=false;detail.innerHTML=`<div class="detail-content"><button class="detail-back" id="backButton" type="button">← 返回列表</button><span class="panel-kicker">ALERT DETAIL / ${alert.id}</span><h2 class="detail-title">${alert.type}</h2><p class="detail-sub">告警点已在左侧模型中定位</p><div class="detail-hero"><span class="level ${levelClass(alert.level)}">${levelName(alert.level)}告警</span><p>${alert.description}</p></div><div class="detail-grid"><div><span>住户位置</span><b>${getBuilding(alert.building).name}<br>${alert.unit} ${alert.floor}层 ${alert.room}室</b></div><div><span>发生时间</span><b>${alert.time}</b></div><div><span>告警等级</span><b>${levelName(alert.level)}</b></div><div><span>处理状态</span><b id="detailStatus">${alert.status}</b></div></div><div class="detail-section"><h3>设备依据</h3><div class="evidence">${alert.device}</div></div><div class="actions"><button id="contactButton" type="button">记录联系住户</button><button id="dispatchButton" class="primary" type="button">安排上门处置</button></div></div>`;/** @type {HTMLElement} */(document.getElementById("backButton")).addEventListener("click",closeDetail);/** @type {HTMLElement} */(document.getElementById("contactButton")).addEventListener("click",()=>updateStatus(alert,"已联系住户"));/** @type {HTMLElement} */(document.getElementById("dispatchButton")).addEventListener("click",()=>updateStatus(alert,"已安排上门"));}
 /** @param {AlertData} alert @param {string} status @returns {void} */
 function updateStatus(alert,status){alert.status=status;/** @type {HTMLElement} */(document.getElementById("detailStatus")).textContent=status;renderList();showToast(`${alert.id}：${status}（仅保存于当前页面）`);}
 /** @returns {void} */
-function closeDetail(){selectedAlert="";workspace.classList.remove("detail-open");/** @type {HTMLElement} */(document.getElementById("listView")).hidden=false;/** @type {HTMLElement} */(document.getElementById("detailView")).hidden=true;desiredTarget.set(0,4.4,0);desiredRadius=31;requestAnimationFrame(resize);}
+function closeDetail(){selectedAlert="";layoutChanging=workspace.classList.contains("detail-open")&&window.matchMedia("(min-width: 1051px)").matches;workspace.classList.remove("detail-open");/** @type {HTMLElement} */(document.getElementById("listView")).hidden=false;/** @type {HTMLElement} */(document.getElementById("detailView")).hidden=true;desiredTarget.set(0,4.4,0);desiredRadius=31;}
 /** @param {string} message @returns {void} */
 function showToast(message){const toast=/** @type {HTMLElement} */(document.getElementById("toast"));toast.textContent=message;toast.classList.add("show");window.setTimeout(()=>toast.classList.remove("show"),2800);}
 /** @returns {void} */
@@ -148,13 +150,16 @@ function resetView(){const fromTarget=target.clone();const fromRadius=radius;con
 function stopReturnTransition(){if(!returnTransition)return;returnTransition=null;desiredTarget.copy(target);desiredRadius=radius;}
 /** @returns {void} */
 function resize(){const width=sceneElement.clientWidth;const height=sceneElement.clientHeight;if(width===0||height===0)return;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}
-new ResizeObserver(resize).observe(sceneElement);resize();
+new ResizeObserver(()=>{if(!layoutChanging)resize();}).observe(sceneElement);resize();
+workspace.addEventListener("transitionend",event=>{if(event.target===workspace&&event.propertyName==="grid-template-columns"){layoutChanging=false;resize();}});
 /** @param {PointerEvent} event @returns {void} */
 function setPointer(event){const rect=renderer.domElement.getBoundingClientRect();pointer.x=(event.clientX-rect.left)/rect.width*2-1;pointer.y=-(event.clientY-rect.top)/rect.height*2+1;raycaster.setFromCamera(pointer,camera);}
+/** @returns {MarkerRaycastHit|null} */
+function visibleMarkerHit(){const markerHit=/** @type {MarkerRaycastHit|undefined} */(raycaster.intersectObjects(markerHits,false)[0]);if(!markerHit)return null;const floorHit=/** @type {{distance:number}|undefined} */(raycaster.intersectObjects(hitObjects,false)[0]);return floorHit&&floorHit.distance<markerHit.distance?null:markerHit;}
 renderer.domElement.addEventListener("pointerdown",event=>{stopReturnTransition();dragging=true;dragDistance=0;pointerX=event.clientX;pointerY=event.clientY;renderer.domElement.setPointerCapture(event.pointerId);});
-renderer.domElement.addEventListener("pointermove",event=>{hovered=true;if(!dragging){setPointer(event);const markerHit=raycaster.intersectObjects(markerHits,false)[0];hoveredMarker=markerHit?markerHit.object.userData.id:"";renderer.domElement.style.cursor=hoveredMarker?"pointer":"grab";return;}hoveredMarker="";renderer.domElement.style.cursor="grabbing";const dx=event.clientX-pointerX;const dy=event.clientY-pointerY;dragDistance+=Math.abs(dx)+Math.abs(dy);theta-=dx*.006;phi=Math.max(.2,Math.min(1.51,phi-dy*.006));pointerX=event.clientX;pointerY=event.clientY;});
+renderer.domElement.addEventListener("pointermove",event=>{hovered=true;if(!dragging){setPointer(event);const markerHit=visibleMarkerHit();hoveredMarker=markerHit?markerHit.object.userData.id:"";renderer.domElement.style.cursor=hoveredMarker?"pointer":"grab";return;}hoveredMarker="";renderer.domElement.style.cursor="grabbing";const dx=event.clientX-pointerX;const dy=event.clientY-pointerY;dragDistance+=Math.abs(dx)+Math.abs(dy);theta-=dx*.006;phi=Math.max(.2,Math.min(1.51,phi-dy*.006));pointerX=event.clientX;pointerY=event.clientY;});
 renderer.domElement.addEventListener("pointerleave",()=>{hovered=false;hoveredMarker="";renderer.domElement.style.cursor="grab";});
-renderer.domElement.addEventListener("pointerup",event=>{dragging=false;if(dragDistance>6)return;setPointer(event);const markerHit=raycaster.intersectObjects(markerHits,false)[0];if(markerHit){openAlert(markerHit.object.userData.id);return;}const floorHit=raycaster.intersectObjects(hitObjects,false)[0];if(floorHit)selectFloor(floorHit.object.userData.building,floorHit.object.userData.floor);});
+renderer.domElement.addEventListener("pointerup",event=>{dragging=false;if(dragDistance>6)return;setPointer(event);const markerHit=visibleMarkerHit();if(markerHit){openAlert(markerHit.object.userData.id);return;}const floorHit=raycaster.intersectObjects(hitObjects,false)[0];if(floorHit)selectFloor(floorHit.object.userData.building,floorHit.object.userData.floor);});
 renderer.domElement.addEventListener("wheel",event=>{event.preventDefault();stopReturnTransition();desiredRadius=Math.max(5,Math.min(48,desiredRadius*(event.deltaY>0?1.1:.9)));},{passive:false});
 /** @type {HTMLElement} */(document.getElementById("rotationButton")).addEventListener("click",event=>{userPaused=!userPaused;/** @type {HTMLElement} */(event.currentTarget).textContent=userPaused?"▶ 继续旋转":"Ⅱ 暂停旋转";});
 /** @type {HTMLElement} */(document.getElementById("resetButton")).addEventListener("click",resetView);
