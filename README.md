@@ -6,12 +6,29 @@
 
 ## 查看原型
 
-直接用浏览器打开 [`web/index.html`](web/index.html)。页面提供三维社区视图、楼栋及楼层定位、告警列表与事件详情。浏览器需支持 WebGL。Three.js 已放在 `web/vendor/`，无需安装依赖或联网加载脚本。
+在 Windows 下双击 [`web/start.bat`](web/start.bat)，使用已安装的 Python 或 Node.js 启动本地服务，浏览器会打开页面；终端会显示实际访问地址。页面提供三维社区视图、楼栋及楼层定位、告警列表与事件详情，浏览器需支持 WebGL。Three.js 和住户卡片构建产物已包含在仓库中，查看现有页面无需安装前端依赖。
+
+住户卡片是独立的 React/Vite 子应用，主页面通过 iframe 加载 `web/profile-card/dist/index.html`。修改卡片源码后，在 `web/profile-card` 中执行 `npm ci` 和 `npm run build`，并将源码及更新后的 `dist/` 一起提交。
+
+## WorkBuddy 发布与同步
+
+线上地址：[安响社区守护](https://anxiang-community.app.workbuddy.host/web/index.html)。现有 WorkBuddy 应用 ID 为 `wbapp_hTMKOcvWyv1WuowOhi6LFW`，更新时复用该应用与域名。
+
+GitHub、本地工作目录和线上发布版本分别更新：`git pull` 只更新本地代码，`git push` 只更新 GitHub；仓库目前没有配置自动部署流程，推送后还需要在 WorkBuddy 中更新发布。
+
+1. 在 WorkBuddy 中打开本仓库目录，确认当前分支及本地修改，再拉取 GitHub 最新代码；有冲突时先保留并处理本地修改。
+2. 修改并通过本地预览检查；若改动住户卡片源码，先重新构建卡片。
+3. 按需提交并推送 GitHub，然后在 WorkBuddy 的分享面板点击“更新”，或要求“更新发布到已有的安响社区守护应用，保持原域名”。
+4. 发布入口使用 `web/index.html`，保留 `web/` 下的资源目录结构。若发布配置仍指定根目录 `index.html`，需先在 WorkBuddy 中调整入口；当前仓库没有根目录跳转页。
+5. 打开线上地址并强制刷新，检查三维视图、告警详情及住户卡片，确认资源加载正常。
+
+本机 WorkBuddy 关联文件为 `.workbuddy/applications.yaml` 和 `.wbapp_hTMKOcvWyv1WuowOhi6LFW.genie`，其中的本地路径依机器而异。不要将凭据、访问令牌或本机操作记录提交到仓库。修改关联文件本身不会触发发布；没有 WorkBuddy 发布工具或登录会话时，应在 WorkBuddy 内完成更新，不能把 Git 推送当作发布成功。
 
 ## 项目文件
 
 - [`docs/产品方案.md`](docs/产品方案.md)：整理后的定位、范围、流程、演示边界与待验证问题。
 - [`web/`](web/)：由 `try/demo1` 整理来的网页原型。
+- [`AGENTS.md`](AGENTS.md)：代码修改、验证及发布时的协作约定。
 
 ## 当前重点
 
