@@ -1,0 +1,155 @@
+/* 安响 · 适老化主题覆盖层
+ * 官方 ProfileCard.jsx / ProfileCard.css 保持原样，本文件仅做「主题参数」级别覆盖：
+ * 暖米色卡框、更大的字号与更高的文字对比、柔和的暖光全息、更大的点击热区。
+ * 组件通过内联 style 写入 CSS 变量，因此这里用 !important 才能覆盖主题变量。
+ */
+.elder-page .profile-card.elder-profile {
+  width: 290px;
+  max-width: 100%;
+
+  --pc-frame: rgba(250, 244, 234, 0.94) !important;
+  --pc-frame-edge: rgba(120, 96, 72, 0.16) !important;
+  --pc-frame-highlight: rgba(255, 255, 255, 0.92) !important;
+  --pc-frame-shadow: 0 18px 36px -20px rgba(96, 74, 52, 0.42), 0 4px 12px -8px rgba(96, 74, 52, 0.24) !important;
+
+  --pc-tile: linear-gradient(180deg, #fffdf9 0%, #f3ece1 100%) !important;
+  --pc-tile-edge: rgba(120, 96, 72, 0.14) !important;
+  --pc-tile-highlight: rgba(255, 255, 255, 0.95) !important;
+  --pc-tile-shadow: 0 4px 10px -5px rgba(96, 74, 52, 0.32) !important;
+
+  --pc-ink: #3a4a3d !important;
+  --pc-muted: rgba(58, 74, 61, 0.74) !important;
+  --pc-hover: brightness(0.95) !important;
+  --pc-press: brightness(0.88) !important;
+  --pc-shade: rgba(74, 58, 42, 0.13) !important;
+
+  /* 适老化：去掉刺眼的彩虹全息，改为低饱和暖光 */
+  --pc-blend: soft-light !important;
+  --pc-holo-filter: saturate(0.5) hue-rotate(-14deg) !important;
+  --pc-sheen: rgba(255, 248, 235, 0.36) !important;
+}
+
+/* 姓名 / 住址：放大字号、提高对比度，便于长者阅读 */
+.elder-page .profile-card__info {
+  left: 18px;
+  right: 18px;
+  bottom: 20px;
+}
+
+.elder-page .profile-card__name {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px rgba(30, 38, 31, 0.42);
+}
+
+.elder-page .profile-card__title {
+  margin-top: 6px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.96);
+  text-shadow: 0 1px 6px rgba(30, 38, 31, 0.4);
+}
+
+/* 底部加深遮罩，保证白字始终可读 */
+.elder-page .profile-card__scrim {
+  background: linear-gradient(
+    to top,
+    rgba(34, 44, 36, 0.84) 0%,
+    rgba(34, 44, 36, 0.68) 14%,
+    rgba(34, 44, 36, 0.34) 32%,
+    rgba(34, 44, 36, 0.06) 50%,
+    rgba(34, 44, 36, 0) 62%
+  );
+}
+
+.elder-page .profile-card__footer {
+  padding: 7px 12px 10px;
+  gap: 6px;
+}
+
+.elder-page .profile-card__avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.elder-page .profile-card__handle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.elder-page .profile-card__status {
+  font-size: 12.5px;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.elder-page .profile-card__status::before {
+  width: 7px;
+  height: 7px;
+}
+
+/* 更大的点击热区 + 与主页主色一致的深绿 */
+.elder-page .profile-card__contact {
+  height: 40px;
+  padding: 0 12px;
+  gap: 5px;
+  border-radius: 12px;
+  background: #315f4e;
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 3px 8px -4px rgba(49, 95, 78, 0.6);
+}
+
+.elder-page .profile-card__contact svg {
+  color: #ffffff;
+}
+
+.elder-page .profile-card__contact:focus-visible {
+  outline: 3px solid #315f4e;
+  outline-offset: 3px;
+}
+
+@media (max-width: 380px) {
+  .elder-page .profile-card.elder-profile {
+    width: 248px;
+  }
+
+  .elder-page .profile-card__name {
+    font-size: 22px;
+  }
+
+  .elder-page .profile-card__title {
+    font-size: 12.5px;
+  }
+
+  .elder-page .profile-card__handle {
+    font-size: 13.5px;
+  }
+
+  .elder-page .profile-card__status {
+    font-size: 11.5px;
+  }
+
+  .elder-page .profile-card__contact {
+    height: 38px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  /* 窄屏优先保证档案文字完整可读，收起装饰性小头像 */
+  .elder-page .profile-card__footer {
+    padding: 6px 10px 9px;
+    gap: 6px;
+  }
+
+  .elder-page .profile-card__avatar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elder-page .profile-card__body {
+    will-change: auto;
+  }
+}
