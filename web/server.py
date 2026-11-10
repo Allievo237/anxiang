@@ -7,7 +7,7 @@
   http.cookies / secrets          HttpOnly Cookie 会话
   hashlib.pbkdf2_hmac (database)  密码哈希
 
-启动：双击 双击启动.bat，或执行 `python server.py`
+启动：双击 web/start.bat，或执行 `python server.py`
 默认地址：http://127.0.0.1:8765/login.html
 
 安全边界：

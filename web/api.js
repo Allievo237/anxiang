@@ -16,7 +16,7 @@
     try {
       response = await fetch(url, options);
     } catch (error) {
-      return { ok: false, offline: true, message: "无法连接本地服务，请用「双击启动.bat」启动 server.py" };
+      return { ok: false, offline: true, message: "无法连接本地服务，请用「start.bat」启动 server.py" };
     }
     var data;
     try {
