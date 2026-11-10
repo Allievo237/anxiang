@@ -1,0 +1,57 @@
+/* iframe 内部页面骨架：透明背景、可内部滚动、除官方卡片本体外全部穿透指针事件，
+   确保 iframe 不吞掉父页面的滚动、hover 与点击。 */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+html,
+body {
+  background: transparent;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* pointer-events 会继承：整页默认穿透，只有官方 ProfileCard 本体接收指针事件。 */
+html,
+body,
+#root,
+.elder-page,
+.elder-page * {
+  pointer-events: none;
+}
+
+/* 只让官方卡片本体与卡内按钮接收指针事件：
+   不能给所有后代强制 auto，否则会覆盖官方 .profile-card__rim / __glare 的 pointer-events:none，
+   装饰层会挡住「联系家属」按钮。 */
+.elder-stage__card,
+.elder-stage__card .profile-card,
+.elder-stage__card .profile-card button {
+  pointer-events: auto;
+}
+
+.elder-stage__card {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+/* 窄屏下让文档本身撑开并可滚动，避免内容被固定高度的根容器裁剪 */
+@media (max-width: 720px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+  }
+}
